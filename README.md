@@ -58,8 +58,6 @@ The architecture maintains clear separation between training and inference pipel
 **Architecture Design:**
 The system employs a multimodal approach combining computer vision and audio processing pipelines. Face emotions are detected using a CNN architecture trained on FER-2013, while voice emotions use a CNN-BiLSTM-Attention model that captures both spatial and temporal patterns in audio features.
 
-![System Architecture](assets/system_architecture.png)
-
 **Face Emotion Recognition:**
 - CNN architecture with convolutional layers for feature extraction
 - Fully connected layers for 7-class classification

@@ -12,7 +12,7 @@ class EngagementBar:
     """Engagement bar visualization component"""
     
     @staticmethod
-    def display(engagement_score: float, confusion_level: float):
+    def display(engagement_score: float, confusion_level: float, frame_id: int = 0):
         """
         Display engagement score and confusion level.
         
@@ -44,7 +44,7 @@ class EngagementBar:
         
         fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"eng_gauge_{frame_id}")
         
         # Confusion level bar
         confusion_percent = confusion_level * 100
@@ -69,7 +69,7 @@ class EngagementBar:
             showlegend=False
         )
         
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, key=f"conf_bar_{frame_id}")
         
         # Status indicators
         col1, col2 = st.columns(2)

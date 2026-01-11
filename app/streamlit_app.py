@@ -7,6 +7,7 @@ import streamlit as st
 import cv2
 import numpy as np
 import requests
+from requests.exceptions import Timeout, ConnectionError
 import base64
 import time
 from typing import Dict, Optional
@@ -44,6 +45,8 @@ if "confusion_alerts" not in st.session_state:
     st.session_state.confusion_alerts = []
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "audio_emotions" not in st.session_state:
+    st.session_state.audio_emotions = None
 
 
 def check_api_health() -> bool:
@@ -82,6 +85,56 @@ def process_frame(frame: np.ndarray) -> Dict:
         
         if response.status_code == 200:
             return response.json()
+    except Exception as e:
+        st.error(f"API Error: {e}")
+    
+    return None
+
+
+def process_audio(audio_file) -> Dict:
+    """
+    Process audio and get emotion predictions from API.
+    
+    Args:
+        audio_file: Audio file from st.audio_input (UploadedFile or bytes)
+        
+    Returns:
+        Emotion and engagement data
+    """
+    # Read audio bytes from file if it's an UploadedFile
+    if hasattr(audio_file, 'read'):
+        audio_bytes = audio_file.read()
+    else:
+        audio_bytes = audio_file
+    
+    # Encode audio to base64 for JSON transmission
+    audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+    
+    # Send to API
+    try:
+        response = requests.post(
+            f"{API_URL}/infer/emotions",
+            json={
+                "audio_data": audio_base64,
+                "timestamp": time.time()
+            },
+            timeout=30  # Increased timeout for audio processing (can take longer)
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error(f"API returned status {response.status_code}")
+            if response.status_code == 500:
+                try:
+                    error_detail = response.json()
+                    st.error(f"Error details: {error_detail.get('detail', 'Unknown error')}")
+                except:
+                    pass
+    except requests.exceptions.Timeout:
+        st.error("⏱️ Audio processing timed out. The audio file might be too long or the server is busy. Try recording a shorter audio clip.")
+    except requests.exceptions.ConnectionError:
+        st.error("🔌 Connection error. Make sure the backend API is running on port 8000.")
     except Exception as e:
         st.error(f"API Error: {e}")
     
@@ -139,7 +192,36 @@ def main():
     
     with col2:
         st.subheader("🎤 Voice Emotions")
+        
+        # Audio input recorder
+        st.markdown("**Record Audio:**")
+        audio_bytes = st.audio_input("Speak to detect emotions", key="audio_recorder")
+        
         voice_placeholder = st.empty()
+        
+        # Process audio if recorded
+        if audio_bytes:
+            # Clear previous audio emotions when new recording starts
+            st.session_state.audio_emotions = None
+            voice_placeholder.empty()  # Clear previous display
+            
+            with st.spinner("Processing audio emotions..."):
+                audio_result = process_audio(audio_bytes)
+                if audio_result and audio_result.get("audio_emotions"):
+                    st.session_state.audio_emotions = audio_result["audio_emotions"]
+                    st.success("✅ Audio processed!")
+                    # Playback recorded audio
+                    st.audio(audio_bytes, format="audio/wav")
+                    # Display voice emotions
+                    with voice_placeholder.container():
+                        VoiceGauge.display(st.session_state.audio_emotions, frame_id=999999)
+                else:
+                    st.warning("⚠️ No emotions detected in audio. Please try again.")
+        else:
+            # Clear display when no audio is recorded
+            if st.session_state.audio_emotions:
+                st.session_state.audio_emotions = None
+            voice_placeholder.empty()
         
         st.subheader("💬 Tutor Chat")
         chat_placeholder = st.empty()
@@ -209,20 +291,22 @@ def main():
                     # Display emotion meter
                     if result.get("face_emotions"):
                         with emotion_placeholder.container():
-                            EmotionMeter.display(result["face_emotions"])
+                            EmotionMeter.display(result["face_emotions"], frame_id=frame_count)
                     
                     # Display engagement bar
                     if result.get("engagement_score") is not None:
                         with engagement_placeholder.container():
                             EngagementBar.display(
                                 result["engagement_score"],
-                                result.get("confusion_level", 0.0)
+                                result.get("confusion_level", 0.0),
+                                frame_id=frame_count
                             )
                     
-                    # Display voice gauge (if audio available)
+                    # Display voice gauge (if audio available from video processing)
                     if result.get("audio_emotions"):
+                        st.session_state.audio_emotions = result["audio_emotions"]
                         with voice_placeholder.container():
-                            VoiceGauge.display(result["audio_emotions"])
+                            VoiceGauge.display(result["audio_emotions"], frame_id=frame_count)
             
             # Display webcam feed
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

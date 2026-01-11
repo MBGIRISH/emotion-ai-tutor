@@ -12,7 +12,7 @@ class EmotionMeter:
     """Emotion meter visualization component"""
     
     @staticmethod
-    def display(emotions: Dict[str, float]):
+    def display(emotions: Dict[str, float], frame_id: int = 0):
         """
         Display emotion probabilities as horizontal bar chart.
         
@@ -62,7 +62,7 @@ class EmotionMeter:
             showlegend=False
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"emotion_meter_{frame_id}")
         
         # Display top emotion
         top_emotion, top_prob = sorted_emotions[0]

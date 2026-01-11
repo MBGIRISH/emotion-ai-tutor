@@ -1,333 +1,358 @@
-# Emotion-Aware AI Tutor
+# Emotion-Aware AI Tutoring System
 
-A production-ready multimodal AI tutoring system that adapts to student emotions in real-time using face and voice emotion detection, engagement tracking, and LLM-powered adaptive responses.
+## Problem Statement
 
-## 🎯 System Overview
+Traditional online learning platforms lack real-time awareness of student emotional states, leading to ineffective teaching interventions. When students become confused or frustrated during learning sessions, instructors cannot detect these emotional cues until it is too late, resulting in disengagement and poor learning outcomes. This problem is particularly acute in remote learning environments where visual and auditory emotional signals are the primary indicators of student comprehension.
 
-This system combines:
-- **Real-time face emotion detection** using FER-2013 trained models
-- **Real-time voice emotion detection** using RAVDESS trained models
-- **Engagement & confusion tracking** via MediaPipe (blink rate, gaze direction, head pose)
-- **Adaptive LLM tutoring** that responds to student emotional state
-- **Dual frontend options**: React web app and Streamlit dashboard for real-time visualization and interaction
+Success is defined as accurately detecting student emotions in real-time (both facial expressions and voice patterns) and providing adaptive tutoring responses that improve learning engagement and comprehension.
 
-## 📁 Project Structure
+## Objective
+
+This project aims to build a multimodal emotion recognition system that:
+- Detects facial emotions from video streams in real-time
+- Detects voice emotions from audio recordings
+- Calculates engagement and confusion metrics from emotional patterns
+- Generates adaptive tutoring responses based on detected emotional states
+- Provides an interactive dashboard for visualization and analysis
+
+The system must operate in real-time with low latency, support standard webcams and microphones, and achieve emotion classification accuracy above 80% for practical deployment.
+
+## Dataset
+
+**Face Emotion Recognition:**
+- Dataset: FER-2013 (Facial Expression Recognition 2013)
+- Source: Kaggle
+- Type: Image data (structured)
+- Size: ~28,709 training images, ~3,589 test images
+- Format: 48x48 grayscale images
+- Classes: 7 emotions (Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral)
+- Preprocessing: Normalization to [0,1], data augmentation (horizontal flip)
+
+**Speech Emotion Recognition:**
+- Datasets: CREMA-D, TESS, SAVEE
+- Sources: CREMA-D (Crowd-sourced Emotional Multimodal Actors Dataset), TESS (Toronto Emotional Speech Set), SAVEE (Surrey Audio-Visual Expressed Emotion)
+- Type: Audio data (unstructured, time-series)
+- Size: Combined ~8,500+ audio samples
+- Format: WAV files, 16kHz sample rate
+- Classes: 4 learning-centric emotions (Happy, Neutral, Confused, Frustrated)
+- Preprocessing: 
+  - Sample rate normalization to 16kHz
+  - Silence trimming using librosa
+  - Data augmentation (background noise, pitch shift ±2 semitones, time stretch 0.9-1.1)
+  - Feature extraction: 40 MFCCs + 12 Chroma features + 128 Mel spectrogram + Zero Crossing Rate = 181-dimensional feature vector
+
+## Approach
+
+**Architecture Design:**
+The system employs a multimodal approach combining computer vision and audio processing pipelines. Face emotions are detected using a CNN architecture trained on FER-2013, while voice emotions use a CNN-BiLSTM-Attention model that captures both spatial and temporal patterns in audio features.
+
+**Face Emotion Recognition:**
+- CNN architecture with convolutional layers for feature extraction
+- Fully connected layers for 7-class classification
+- Real-time inference using MediaPipe for face detection
+
+**Speech Emotion Recognition:**
+- CNN layers for spatial feature extraction from audio feature vectors
+- Bidirectional LSTM layers for temporal pattern recognition
+- Attention mechanism to focus on emotion-relevant time steps
+- Dense layers for 4-class classification
+- Feature engineering: Comprehensive audio feature extraction (MFCCs, Chroma, Mel, ZCR)
+
+**Training Strategy:**
+- Face model: Standard train/test split (80/20), data augmentation
+- Speech model: Train/validation/test split (70/15/15), stratified sampling
+- Class balancing using weighted random sampling for speech model
+- Early stopping with patience=20 to prevent overfitting
+- Learning rate scheduling with ReduceLROnPlateau
+
+## Model & Techniques Used
+
+**Machine Learning Models:**
+- CNN (Convolutional Neural Network) for face emotion recognition
+- CNN-BiLSTM-Attention for speech emotion recognition
+- Batch normalization and dropout for regularization
+
+**Feature Engineering:**
+- MFCC (Mel-frequency Cepstral Coefficients) for audio
+- Chroma features for pitch class representation
+- Mel spectrogram for frequency domain analysis
+- Zero Crossing Rate for temporal characteristics
+- Data augmentation (noise injection, pitch shifting, time stretching)
+
+**Libraries and Frameworks:**
+- PyTorch for model development and training
+- FastAPI for REST API backend
+- Streamlit for interactive dashboard
+- librosa and soundfile for audio processing
+- OpenCV and MediaPipe for face detection
+- scikit-learn for data splitting and evaluation metrics
+- NumPy and Pandas for data manipulation
+
+## Evaluation Metrics
+
+**Primary Metrics:**
+- Accuracy: Overall classification correctness
+- F1-Score (weighted): Harmonic mean of precision and recall, accounting for class imbalance
+- Per-class precision, recall, and F1-score for detailed analysis
+
+**Why These Metrics:**
+- Accuracy provides an overall performance measure
+- F1-score addresses class imbalance in emotion datasets
+- Per-class metrics reveal performance variations across emotion categories
+- Confusion matrices visualize misclassification patterns
+
+**Validation Strategy:**
+- Face model: Standard test set evaluation
+- Speech model: Stratified train/validation/test splits to maintain class distribution
+- No cross-validation due to computational constraints, but held-out test set provides unbiased performance estimate
+
+## Results
+
+**Speech Emotion Recognition Model:**
+- Test Accuracy: 92.51%
+- Test F1-Score (weighted): 0.9255
+- Validation Accuracy: 93.56%
+- Training completed in 15 epochs
+
+**Per-Class Performance:**
+- Happy: Precision 0.84, Recall 0.96, F1 0.90
+- Neutral: Precision 0.86, Recall 1.00, F1 0.93
+- Confused: Precision 0.93, Recall 0.95, F1 0.94
+- Frustrated: Precision 0.99, Recall 0.88, F1 0.93
+
+**Key Insights:**
+- All emotion classes achieved F1-scores above 0.90, indicating robust performance
+- Neutral emotion shows perfect recall (1.00), suggesting high sensitivity
+- Frustrated emotion shows highest precision (0.99), indicating low false positive rate
+- The 4-class learning-centric mapping (merging anger, fear, disgust into "frustrated") improved class balance and interpretability
+
+**Limitations:**
+- Model trained on actor-performed emotions, may not generalize to natural student expressions
+- Real-time audio processing requires minimum 0.5 seconds of audio
+- Performance depends on audio quality and background noise levels
+- Face emotion detection requires clear frontal face view
+
+## Business / Real-World Impact
+
+**Practical Applications:**
+- Online learning platforms can integrate this system to monitor student engagement in real-time
+- Educational institutions can identify struggling students early and provide timely interventions
+- Corporate training programs can adapt content delivery based on learner emotional states
+- Researchers can study emotional patterns in learning contexts
+
+**Stakeholders Who Benefit:**
+- Students: Receive personalized, emotionally-aware tutoring assistance
+- Educators: Gain insights into student comprehension without direct observation
+- Educational administrators: Identify at-risk students and optimize curriculum delivery
+- EdTech companies: Differentiate products with emotion-aware features
+
+**Decision-Enabling Capabilities:**
+- Real-time identification of confusion triggers specific content explanations
+- Frustration detection prompts alternative teaching approaches
+- Engagement metrics inform session pacing and difficulty adjustment
+- Emotional trend analysis supports long-term learning path optimization
+
+## Project Structure
 
 ```
-emotion-aware-ai-tutor/
- ├── README.md
- ├── requirements.txt
- ├── package.json                # React frontend dependencies
- ├── data/
- │    ├── fer2013/               # FER-2013 dataset (upload here)
- │    ├── ravdess/               # RAVDESS dataset (upload here)
- │    ├── processed/             # Preprocessed data cache
- │    └── instructions.md        # Dataset upload instructions
- ├── models/
- │    ├── face_emotion_model.pth # ⚠️ Needs training
- │    ├── audio_emotion_model.pth # ✅ Trained
- │    └── README.md
- ├── backend/
- │    ├── api.py                 # FastAPI server
- │    ├── inference_face.py      # Real-time face inference
- │    ├── inference_audio.py     # Real-time audio inference
- │    ├── engagement.py          # Engagement & confusion logic
- │    ├── tutor.py               # LLM adaptation engine
- │    └── utils/
- │          ├── face_detector.py
- │          ├── audio_utils.py
- │          └── logger.py
- ├── app/                        # Streamlit frontend
- │    ├── streamlit_app.py       # Main dashboard
- │    └── components/
- │          ├── emotion_meter.py
- │          ├── voice_gauge.py
- │          ├── engagement_bar.py
- │          └── tutor_chatbox.py
- ├── components/                 # React frontend components
- │    ├── MetricsPanel.tsx
- │    ├── TutorChat.tsx
- │    └── WebcamFeed.tsx
- ├── App.tsx                      # React main app
- ├── notebooks/
- │    ├── train_face_emotion.ipynb
- │    ├── train_audio_emotion.ipynb
- │    ├── evaluate_models.ipynb
- │    └── demo_predictions.ipynb
- └── utils/
-      ├── preprocessing_face.py
-      ├── preprocessing_audio.py
-      └── common.py
+emotion-ai-tutor-2/
+├── backend/                 # FastAPI backend server
+│   ├── api.py              # Main API endpoints
+│   ├── inference_face.py   # Face emotion inference engine
+│   ├── inference_audio.py  # Speech emotion inference engine
+│   ├── engagement.py       # Engagement and confusion calculation
+│   ├── tutor.py            # Adaptive tutoring logic
+│   └── utils/              # Utility modules (face detection, logging)
+├── app/                     # Streamlit frontend
+│   ├── streamlit_app.py    # Main dashboard application
+│   └── components/         # Reusable UI components
+│       ├── emotion_meter.py
+│       ├── voice_gauge.py
+│       ├── engagement_bar.py
+│       └── tutor_chatbox.py
+├── models/                  # Trained models and model definitions
+│   ├── speech_emotion_model.py    # CNN-BiLSTM-Attention architecture
+│   ├── speech_emotion_model.pth   # Trained speech model weights
+│   └── speech_emotion_confusion_matrix.png
+├── notebooks/               # Jupyter notebooks for training
+│   ├── train_face_emotion.ipynb
+│   └── train_audio_emotion.ipynb
+├── utils/                   # Data preprocessing utilities
+│   ├── preprocessing_face.py
+│   └── preprocessing_audio_speech_emotion.py
+├── data/                    # Dataset storage and cache
+│   ├── fer2013/            # FER-2013 dataset
+│   ├── Crema/              # CREMA-D dataset
+│   ├── Tess/               # TESS dataset
+│   ├── Savee/              # SAVEE dataset
+│   └── processed/          # Preprocessed data cache
+├── train_speech_emotion.py  # Standalone training script
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
 ```
 
-## 🚀 Quick Start
+## How to Run This Project
 
-### 1. Installation
+**Prerequisites:**
+- Python 3.8+
+- pip package manager
+- Webcam and microphone (for real-time inference)
 
+**Step 1: Clone the Repository**
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+git clone <repository-url>
+cd emotion-ai-tutor-2
+```
 
-# Install dependencies
+**Step 2: Create Virtual Environment**
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+**Step 3: Install Dependencies**
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Dataset Setup
+**Step 4: Prepare Datasets**
+- Download FER-2013 dataset and place in `data/fer2013/`
+- Download CREMA-D, TESS, and SAVEE datasets and place in `data/Crema/`, `data/Tess/`, and `data/Savee/` respectively
+- Preprocessed data will be cached automatically on first run
 
-**FER-2013 Dataset:**
-- Download FER-2013 from: https://www.kaggle.com/datasets/msambare/fer2013
-- Place files in `data/fer2013/`:
-  - Option A: `train.csv` and `test.csv` files
-  - Option B: Folder structure with `train/` and `test/` subdirectories
-- See `data/instructions.md` for detailed instructions
-
-**RAVDESS Dataset:**
-- Download RAVDESS from: https://zenodo.org/record/1188976
-- Extract the complete dataset to `data/ravdess/`
-- Should contain audio files organized by actor, emotion, and statement
-- See `data/instructions.md` for detailed instructions
-
-### 3. Data Preprocessing
-
+**Step 5: Train Models (Optional)**
 ```bash
-# Preprocess FER-2013 data
-python utils/preprocessing_face.py
-
-# Preprocess RAVDESS data
-python utils/preprocessing_audio.py
+# Train speech emotion model
+python train_speech_emotion.py \
+  --crema-dir data/Crema \
+  --tess-dir data/Tess \
+  --savee-dir data/Savee \
+  --epochs 15
 ```
 
-### 4. Model Training
-
-**Train Face Emotion Model:**
+**Step 6: Start Backend API**
 ```bash
-# Open Jupyter notebook
-jupyter notebook notebooks/train_face_emotion.ipynb
-# Run all cells to train and save model to models/face_emotion_model.pth
+uvicorn backend.api:app --reload
 ```
+The API will be available at `http://localhost:8000`
 
-**Train Audio Emotion Model:**
-```bash
-jupyter notebook notebooks/train_audio_emotion.ipynb
-# Run all cells to train and save model to models/audio_emotion_model.pth
-```
-
-**Evaluate Models:**
-```bash
-jupyter notebook notebooks/evaluate_models.ipynb
-```
-
-### 5. Launch the System
-
-**Start FastAPI Backend:**
-```bash
-cd backend
-uvicorn api:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Option A: Launch React Frontend (Recommended)**
-```bash
-# Install Node.js dependencies (first time only)
-npm install
-
-# Start React development server
-npm run dev
-```
-
-The React app will open at `http://localhost:3000`
-
-**Option B: Launch Streamlit Dashboard:**
+**Step 7: Start Streamlit Dashboard**
 ```bash
 streamlit run app/streamlit_app.py
 ```
+The dashboard will open in your browser at `http://localhost:8501`
 
-The Streamlit dashboard will open at `http://localhost:8501`
+**Step 8: Use the Application**
+- Click "Start Detection" to begin face emotion recognition from webcam
+- Use the microphone input to record audio for voice emotion detection
+- View real-time emotion probabilities, engagement scores, and confusion levels
+- Interact with the adaptive tutor chat feature
 
-## 🧠 How It Works
+## Outputs
 
-### Face Emotion Detection
-- Uses MediaPipe for face detection and landmark extraction
-- Runs trained CNN/MobileNetV2 model on detected faces
-- Outputs 7 emotion probabilities: Happy, Sad, Neutral, Angry, Fear, Disgust, Surprise
+The system provides real-time visualization of detected emotions through an interactive dashboard. The interface displays live video feed, emotion probabilities, engagement metrics, and adaptive tutoring responses.
 
-### Voice Emotion Detection
-- Captures microphone input in real-time
-- Extracts MFCC (Mel-frequency cepstral coefficients) features
-- Runs trained LSTM/CNN audio classifier
-- Outputs emotion probabilities from RAVDESS classes
+![Dashboard Overview](screenshots/dashboard_overview.png)
 
-### Engagement Score Calculation
+**Face Emotion Detection Interface:**
 
-The engagement score (0-100) combines multiple signals:
+![Face Emotion Detection](screenshots/face_emotions.png)
 
-1. **Blink Rate** (via Eye Aspect Ratio from MediaPipe)
-   - Normal: 15-20 blinks/min
-   - High (>30/min): Possible confusion or fatigue
-   - Low (<10/min): Possible disengagement
+- Live video feed from webcam showing the user's face in real-time
+- Horizontal bar chart showing probability distribution across 7 face emotions (Happy, Sad, Angry, Fear, Surprise, Disgust, Neutral)
+- Dominant emotion highlighted with highest probability (e.g., Happy at 85%)
+- Color-coded bars for visual interpretation (Yellow for Happy, Gray for Neutral, Blue for Sad, Red for Angry)
 
-2. **Gaze Direction** (head pose estimation)
-   - Looking at screen: +engagement
-   - Looking away: -engagement
-   - Pitch/yaw/roll angles indicate attention
+**Voice Emotion Detection Interface:**
 
-3. **Emotion Trends**
-   - Positive emotions (happy, surprise): +engagement
-   - Negative emotions (sad, angry, fear): -engagement
-   - Neutral: baseline
+![Voice Emotion Detection](screenshots/voice_emotions.png)
 
-4. **Confusion Detection**
-   - High blink rate + negative emotions + gaze away = confusion
-   - Triggers adaptive tutoring responses
+- Audio recording interface with microphone input and timer display
+- Gauge chart displaying top detected voice emotion with confidence percentage (e.g., "Happy (95.60%)")
+- Bar chart showing all 4 voice emotion probabilities (Happy, Neutral, Confused, Frustrated)
+- Real-time updates as audio is processed
 
-**Formula:**
-```
-engagement = (
-    0.3 * (1 - normalized_blink_deviation) +
-    0.3 * gaze_attention_score +
-    0.4 * emotion_positive_score
-) * 100
-```
+**Engagement and Confusion Metrics:**
 
-### LLM Tutor Adaptation
+![Engagement Metrics](screenshots/engagement_metrics.png)
 
-The `tutor.py` module uses emotion and engagement data to:
+- Semi-circular gauge displaying engagement score (0-100) with visual zones
+- Confusion level line graph showing temporal trends over time
+- Real-time updates as emotions are detected
+- Color-coded indicators for different engagement levels
+- Dominant emotion display with high confidence percentages
 
-1. **Detect Confusion**: High confusion triggers simplified explanations
-2. **Motivate**: Low engagement triggers encouraging messages
-3. **Adapt Pace**: Adjusts explanation complexity based on emotional state
-4. **Provide Hints**: Offers contextual hints when student is stuck
+**Adaptive Tutoring:**
+- Tutor chat interface that responds to detected emotional states
+- Session analytics section for tracking learning patterns over time
+- Control panel with camera selection, start/stop detection, and session reset buttons
 
-**Example Adaptive Responses:**
-- Confusion detected → "Let me break this down into simpler steps..."
-- Low engagement → "I see you might be finding this challenging. Let's try a different approach!"
-- Positive emotions → "Great progress! Let's continue building on this concept."
+## Future Improvements
 
-## 📊 Frontend Features
+**Model Enhancements:**
+- Fine-tune models on student-specific emotional expressions for better generalization
+- Implement transfer learning from larger emotion recognition datasets
+- Explore transformer-based architectures for improved temporal modeling
+- Add multi-modal fusion techniques to combine face and voice emotions more effectively
 
-### React Web App (Primary)
-- **Modern UI**: Beautiful, responsive interface built with React and TypeScript
-- **Webcam Feed**: Real-time video preview with face detection overlay
-- **Metrics Panel**: Live emotion probabilities, engagement scores, and confusion levels
-- **Tutor Chat**: Interactive chat with Gemini 2.5 Flash-powered adaptive tutor
-- **Session Analytics**: Historical emotion and engagement trends with charts
-- **API Key Management**: Integrated Google AI Studio API key selector
+**Data Improvements:**
+- Collect real student emotion data in learning contexts
+- Increase dataset diversity with more speakers and recording conditions
+- Add emotion intensity labels (low/medium/high) for finer-grained detection
+- Include contextual features (time of day, learning topic, session duration)
 
-### Streamlit Dashboard (Alternative)
-- **Webcam Feed**: Real-time video preview with face detection overlay
-- **Emotion Bar Graph**: Live emotion probabilities for 7 face emotions
-- **Voice Emotion Meter**: Real-time audio emotion visualization
-- **Engagement Score Bar**: 0-100 engagement level with color coding
-- **Confusion Alerts**: Pop-up notifications when confusion is detected
-- **Tutor Chatbox**: Interactive chat with adaptive LLM tutor
-- **Session Analytics**: Historical emotion and engagement trends
+**Deployment and Scaling:**
+- Containerize application using Docker for consistent deployment
+- Implement model serving infrastructure (TensorFlow Serving, TorchServe)
+- Add user authentication and session management
+- Support multiple concurrent users with load balancing
+- Deploy to cloud platforms (AWS, GCP, Azure) for scalable access
 
-## 🔧 Configuration
+**Feature Additions:**
+- Long-term emotion trend analysis and reporting
+- Integration with Learning Management Systems (LMS)
+- Mobile app support for on-the-go learning
+- Multi-language emotion recognition
+- Personalized emotion sensitivity thresholds
 
-Create a `.env` file in the project root:
+## Key Learnings
 
-```env
-# LLM API Keys (choose one)
-OPENAI_API_KEY=your_openai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
+**Technical Learnings:**
+- CNN-BiLSTM-Attention architectures effectively capture both spatial and temporal patterns in audio emotion recognition
+- Comprehensive feature engineering (MFCCs + Chroma + Mel + ZCR) significantly improves model performance compared to MFCCs alone
+- Class balancing through weighted sampling is crucial for imbalanced emotion datasets
+- Real-time inference requires careful optimization of preprocessing pipelines
+- Multi-modal systems benefit from asynchronous processing to maintain low latency
 
-# Model Paths
-FACE_MODEL_PATH=models/face_emotion_model.pth
-AUDIO_MODEL_PATH=models/audio_emotion_model.pth
+**Data Science Learnings:**
+- Mapping raw emotions (anger, fear, disgust) to learning-centric categories (frustrated) improves both class balance and interpretability
+- Data augmentation (noise, pitch shift, time stretch) effectively increases dataset size and model robustness
+- Early stopping and learning rate scheduling are essential for preventing overfitting in deep learning models
+- Evaluation metrics must align with business objectives (F1-score for class imbalance, per-class metrics for interpretability)
+- Real-world deployment requires handling edge cases (silence, poor audio quality, occluded faces)
 
-# API Settings
-API_HOST=0.0.0.0
-API_PORT=8000
+**Project Management Learnings:**
+- Modular architecture (separate inference engines, preprocessing, training) facilitates development and maintenance
+- Clear separation between training scripts and inference code enables independent updates
+- Comprehensive error handling and logging are critical for production systems
+- User interface design significantly impacts system usability and adoption
 
-# Streamlit Settings
-STREAMLIT_PORT=8501
-```
+## References
 
-## 🧪 Testing
+**Datasets:**
+- FER-2013: Goodfellow, I. et al. (2013). "Challenges in Representation Learning: A report on the machine learning contest of ICML 2013"
+- CREMA-D: Cao, H. et al. (2014). "CREMA-D: Crowd-sourced Emotional Multimodal Actors Dataset"
+- TESS: Dupuis, K. & Pichora-Fuller, M. K. (2010). "Toronto Emotional Speech Set (TESS)"
+- SAVEE: Jackson, P. & Haq, S. (2014). "Surrey Audio-Visual Expressed Emotion (SAVEE) Database"
 
-```bash
-# Test face inference
-python backend/inference_face.py
+**Techniques and Frameworks:**
+- PyTorch Documentation: https://pytorch.org/docs/stable/index.html
+- FastAPI Documentation: https://fastapi.tiangolo.com/
+- Streamlit Documentation: https://docs.streamlit.io/
+- librosa Audio Processing: McFee, B. et al. (2015). "librosa: Audio and Music Analysis in Python"
 
-# Test audio inference
-python backend/inference_audio.py
+**Related Work:**
+- Emotion recognition in educational contexts: research on affective computing for learning
+- Multimodal emotion recognition: combining visual and auditory cues
+- Real-time emotion detection: latency optimization techniques for live systems
 
-# Test engagement calculation
-python -c "from backend.engagement import compute_engagement; print(compute_engagement(...))"
-```
-
-## 📝 Development
-
-### Adding New Features
-
-- **New emotion classes**: Modify model architecture in training notebooks
-- **New engagement metrics**: Extend `backend/engagement.py`
-- **Custom LLM prompts**: Modify `backend/tutor.py`
-
-### Code Style
-
-```bash
-# Format code
-black backend/ app/ utils/
-
-# Lint code
-flake8 backend/ app/ utils/
-```
-
-## ⚠️ Current Status
-
-**Model Training Status:**
-- ✅ **Audio Emotion Model**: Trained and available (`models/audio_emotion_model.pth`)
-- ⚠️ **Face Emotion Model**: **NOT TRAINED** - needs to be trained before use
-
-**To train the face emotion model:**
-```bash
-# Option 1: Use automated training script
-python train_models_fixed.py
-
-# Option 2: Use Jupyter notebook
-jupyter notebook notebooks/train_face_emotion.ipynb
-# Run all cells - model will save to models/face_emotion_model.pth
-```
-
-**Import Path Issues:**
-- ✅ Fixed: All backend imports now use `backend.utils.*` consistently
-
-## 🐛 Troubleshooting
-
-**Webcam not detected:**
-- Check camera permissions
-- Try different camera index in `inference_face.py`
-
-**Microphone not working:**
-- Check system audio permissions
-- Install `portaudio` (macOS: `brew install portaudio`)
-
-**Model not found:**
-- Ensure models are trained and saved to `models/` directory
-- Check model paths in `.env` file
-- **Face model must be trained** - see training instructions above
-
-**Import errors:**
-- All imports have been fixed to use `backend.utils.*` paths
-- If you see import errors, ensure you're running from the project root
-
-**React frontend not starting:**
-- Ensure Node.js is installed (`node --version`)
-- Run `npm install` to install dependencies
-- Check that port 3000 is available
-
-**CUDA/GPU issues:**
-- Models default to CPU; modify device in inference scripts for GPU
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or submit a pull request.
-
-## 📧 Contact
-
-For questions or support, please open an issue on GitHub.

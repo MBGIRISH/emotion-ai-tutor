@@ -12,7 +12,7 @@ class VoiceGauge:
     """Voice emotion gauge visualization component"""
     
     @staticmethod
-    def display(emotions: Dict[str, float]):
+    def display(emotions: Dict[str, float], frame_id: int = 0):
         """
         Display audio emotion probabilities as gauge chart.
         
@@ -50,11 +50,11 @@ class VoiceGauge:
         
         fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"voice_gauge_{frame_id}")
         
-        # Display all emotions as small bars
-        labels = [emotion.capitalize() for emotion, _ in sorted_emotions[:5]]
-        values = [prob * 100 for _, prob in sorted_emotions[:5]]
+        # Display all emotions as small bars (show all 4 emotions)
+        labels = [emotion.capitalize() for emotion, _ in sorted_emotions]
+        values = [prob * 100 for _, prob in sorted_emotions]
         
         fig2 = go.Figure(data=[
             go.Bar(
@@ -67,7 +67,7 @@ class VoiceGauge:
         ])
         
         fig2.update_layout(
-            title="Top 5 Voice Emotions",
+            title="Voice Emotion Probabilities",
             xaxis_title="Emotion",
             yaxis_title="Probability (%)",
             height=200,
@@ -75,5 +75,5 @@ class VoiceGauge:
             showlegend=False
         )
         
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, key=f"voice_bar_{frame_id}")
 

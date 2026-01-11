@@ -9,11 +9,19 @@ from typing import List, Tuple, Optional
 # MediaPipe is optional - use OpenCV if not available
 try:
     import mediapipe as mp
-    mp_face_detection = mp.solutions.face_detection
-    mp_face_mesh = mp.solutions.face_mesh
-    mp_drawing = mp.solutions.drawing_utils
-    MEDIAPIPE_AVAILABLE = True
-except ImportError:
+    # Check if old API (solutions) is available
+    if hasattr(mp, 'solutions'):
+        mp_face_detection = mp.solutions.face_detection
+        mp_face_mesh = mp.solutions.face_mesh
+        mp_drawing = mp.solutions.drawing_utils
+        MEDIAPIPE_AVAILABLE = True
+    else:
+        # New MediaPipe API doesn't have solutions - use OpenCV fallback
+        MEDIAPIPE_AVAILABLE = False
+        mp_face_detection = None
+        mp_face_mesh = None
+        mp_drawing = None
+except (ImportError, AttributeError):
     MEDIAPIPE_AVAILABLE = False
     mp_face_detection = None
     mp_face_mesh = None

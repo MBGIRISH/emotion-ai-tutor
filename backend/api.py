@@ -14,10 +14,14 @@ import json
 import os
 from dotenv import load_dotenv
 
-from inference_face import FaceEmotionInference
-from inference_audio import AudioEmotionInference
-from engagement import EngagementTracker
-from tutor import AdaptiveTutor
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.inference_face import FaceEmotionInference
+from backend.inference_audio import AudioEmotionInference
+from backend.engagement import EngagementTracker
+from backend.tutor import AdaptiveTutor
 from backend.utils.logger import setup_logger
 
 load_dotenv()
@@ -47,7 +51,7 @@ active_connections: List[WebSocket] = []
 class EmotionRequest(BaseModel):
     """Request model for emotion inference"""
     frame_data: Optional[str] = None  # Base64 encoded image
-    audio_data: Optional[bytes] = None  # Audio bytes
+    audio_data: Optional[str] = None  # Base64 encoded audio bytes
     timestamp: float
 
 
@@ -67,12 +71,12 @@ async def startup_event():
     
     try:
         face_model_path = os.getenv("FACE_MODEL_PATH", "models/face_emotion_model.pth")
-        audio_model_path = os.getenv("AUDIO_MODEL_PATH", "models/audio_emotion_model.pth")
+        audio_model_path = os.getenv("AUDIO_MODEL_PATH", "models/speech_emotion_model.pth")
         
         logger.info("Loading face emotion model...")
         face_inference = FaceEmotionInference(model_path=face_model_path)
         
-        logger.info("Loading audio emotion model...")
+        logger.info("Loading audio emotion model (4-class speech emotion)...")
         audio_inference = AudioEmotionInference(model_path=audio_model_path)
         
         logger.info("API server started successfully")
@@ -126,9 +130,12 @@ async def infer_emotions(request: EmotionRequest):
         
         # Process audio emotion if audio data provided
         if request.audio_data and audio_inference:
+            # Decode base64 audio data
+            import base64 as b64
+            audio_bytes = b64.b64decode(request.audio_data)
             audio_emotions = await asyncio.to_thread(
                 audio_inference.predict_from_bytes,
-                request.audio_data
+                audio_bytes
             )
         
         # Compute engagement and confusion

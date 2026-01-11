@@ -18,7 +18,7 @@ from inference_face import FaceEmotionInference
 from inference_audio import AudioEmotionInference
 from engagement import EngagementTracker
 from tutor import AdaptiveTutor
-from utils.logger import setup_logger
+from backend.utils.logger import setup_logger
 
 load_dotenv()
 

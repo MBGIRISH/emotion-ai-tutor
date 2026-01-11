@@ -14,8 +14,8 @@ import io
 import os
 from dotenv import load_dotenv
 
-from utils.audio_utils import AudioProcessor
-from utils.logger import setup_logger
+from backend.utils.audio_utils import AudioProcessor
+from backend.utils.logger import setup_logger
 
 load_dotenv()
 logger = setup_logger(__name__)

@@ -9,8 +9,8 @@ from collections import deque
 import time
 from dataclasses import dataclass
 
-from utils.face_detector import FaceDetector
-from utils.logger import setup_logger
+from backend.utils.face_detector import FaceDetector
+from backend.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

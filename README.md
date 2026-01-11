@@ -9,7 +9,7 @@ This system combines:
 - **Real-time voice emotion detection** using RAVDESS trained models
 - **Engagement & confusion tracking** via MediaPipe (blink rate, gaze direction, head pose)
 - **Adaptive LLM tutoring** that responds to student emotional state
-- **Streamlit dashboard** for real-time visualization and interaction
+- **Dual frontend options**: React web app and Streamlit dashboard for real-time visualization and interaction
 
 ## 📁 Project Structure
 
@@ -17,14 +17,15 @@ This system combines:
 emotion-aware-ai-tutor/
  ├── README.md
  ├── requirements.txt
+ ├── package.json                # React frontend dependencies
  ├── data/
  │    ├── fer2013/               # FER-2013 dataset (upload here)
  │    ├── ravdess/               # RAVDESS dataset (upload here)
  │    ├── processed/             # Preprocessed data cache
  │    └── instructions.md        # Dataset upload instructions
  ├── models/
- │    ├── face_emotion_model.pth
- │    ├── audio_emotion_model.pth
+ │    ├── face_emotion_model.pth # ⚠️ Needs training
+ │    ├── audio_emotion_model.pth # ✅ Trained
  │    └── README.md
  ├── backend/
  │    ├── api.py                 # FastAPI server
@@ -36,13 +37,18 @@ emotion-aware-ai-tutor/
  │          ├── face_detector.py
  │          ├── audio_utils.py
  │          └── logger.py
- ├── app/
+ ├── app/                        # Streamlit frontend
  │    ├── streamlit_app.py       # Main dashboard
  │    └── components/
  │          ├── emotion_meter.py
  │          ├── voice_gauge.py
  │          ├── engagement_bar.py
  │          └── tutor_chatbox.py
+ ├── components/                 # React frontend components
+ │    ├── MetricsPanel.tsx
+ │    ├── TutorChat.tsx
+ │    └── WebcamFeed.tsx
+ ├── App.tsx                      # React main app
  ├── notebooks/
  │    ├── train_face_emotion.ipynb
  │    ├── train_audio_emotion.ipynb
@@ -120,12 +126,23 @@ cd backend
 uvicorn api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Launch Streamlit Dashboard:**
+**Option A: Launch React Frontend (Recommended)**
+```bash
+# Install Node.js dependencies (first time only)
+npm install
+
+# Start React development server
+npm run dev
+```
+
+The React app will open at `http://localhost:3000`
+
+**Option B: Launch Streamlit Dashboard:**
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-The dashboard will open in your browser at `http://localhost:8501`
+The Streamlit dashboard will open at `http://localhost:8501`
 
 ## 🧠 How It Works
 
@@ -186,8 +203,17 @@ The `tutor.py` module uses emotion and engagement data to:
 - Low engagement → "I see you might be finding this challenging. Let's try a different approach!"
 - Positive emotions → "Great progress! Let's continue building on this concept."
 
-## 📊 Dashboard Features
+## 📊 Frontend Features
 
+### React Web App (Primary)
+- **Modern UI**: Beautiful, responsive interface built with React and TypeScript
+- **Webcam Feed**: Real-time video preview with face detection overlay
+- **Metrics Panel**: Live emotion probabilities, engagement scores, and confusion levels
+- **Tutor Chat**: Interactive chat with Gemini 2.5 Flash-powered adaptive tutor
+- **Session Analytics**: Historical emotion and engagement trends with charts
+- **API Key Management**: Integrated Google AI Studio API key selector
+
+### Streamlit Dashboard (Alternative)
 - **Webcam Feed**: Real-time video preview with face detection overlay
 - **Emotion Bar Graph**: Live emotion probabilities for 7 face emotions
 - **Voice Emotion Meter**: Real-time audio emotion visualization
@@ -248,6 +274,25 @@ black backend/ app/ utils/
 flake8 backend/ app/ utils/
 ```
 
+## ⚠️ Current Status
+
+**Model Training Status:**
+- ✅ **Audio Emotion Model**: Trained and available (`models/audio_emotion_model.pth`)
+- ⚠️ **Face Emotion Model**: **NOT TRAINED** - needs to be trained before use
+
+**To train the face emotion model:**
+```bash
+# Option 1: Use automated training script
+python train_models_fixed.py
+
+# Option 2: Use Jupyter notebook
+jupyter notebook notebooks/train_face_emotion.ipynb
+# Run all cells - model will save to models/face_emotion_model.pth
+```
+
+**Import Path Issues:**
+- ✅ Fixed: All backend imports now use `backend.utils.*` consistently
+
 ## 🐛 Troubleshooting
 
 **Webcam not detected:**
@@ -261,6 +306,16 @@ flake8 backend/ app/ utils/
 **Model not found:**
 - Ensure models are trained and saved to `models/` directory
 - Check model paths in `.env` file
+- **Face model must be trained** - see training instructions above
+
+**Import errors:**
+- All imports have been fixed to use `backend.utils.*` paths
+- If you see import errors, ensure you're running from the project root
+
+**React frontend not starting:**
+- Ensure Node.js is installed (`node --version`)
+- Run `npm install` to install dependencies
+- Check that port 3000 is available
 
 **CUDA/GPU issues:**
 - Models default to CPU; modify device in inference scripts for GPU

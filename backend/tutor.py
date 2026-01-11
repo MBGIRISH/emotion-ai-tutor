@@ -7,7 +7,7 @@ import os
 from typing import Dict, Optional, List
 from dotenv import load_dotenv
 import openai
-from utils.logger import setup_logger
+from backend.utils.logger import setup_logger
 
 load_dotenv()
 logger = setup_logger(__name__)
